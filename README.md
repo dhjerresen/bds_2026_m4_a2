@@ -34,7 +34,7 @@ Final dataset includes:
 
 ## 🧱 Part A - Baseline (Frozen PatentSBERTa)
 
-We extracted frozen embeddings from:
+I extracted frozen embeddings from:
 - `AI-Growth-Lab/PatentSBERTa`
 
 Then trained a Logistic Regression classifier.
@@ -52,7 +52,7 @@ This baseline was used for uncertainty sampling.
 
 ## 🎯 Part B - Uncertainty Sampling
 
-For each claim in `pool_unlabeled`, we computed:
+For each claim in `pool_unlabeled`, I computed:
 
 ```text
 u = 1 - 2|p - 0.5|
@@ -66,7 +66,7 @@ Properties:
 - `u = 1` -> most uncertain (`p` ≈ 0.5)
 - `u ≈ 0` -> very confident prediction
 
-We selected the 100 most uncertain claims for human review.
+I selected the 100 most uncertain claims for human review.
 
 No CPC filtering or keyword rules were used.
 
@@ -94,9 +94,56 @@ This demonstrates that:
 - But systematic errors occur in borderline efficiency cases
 - Human review improves label quality before fine-tuning
 
+### 🔁 Concrete Override Examples (LLM vs Human)
+
+Below are three representative cases where the human label overruled the LLM suggestion. These examples illustrate typical failure modes of the LLM when classifying borderline efficiency or technical claims as "green" without explicit environmental purpose.
+
+#### Example 1 - Network reliability mistaken for environmental efficiency
+
+- `doc_id`: `9209938`
+- LLM suggestion: `1` (medium confidence)
+- Human label: `0`
+- Claim excerpt:
+  > "...recovering from loss of a packet... forward error correction (FEC)... parity packet..."
+
+Explanation:
+The LLM interpreted improvements in transmission efficiency as indirectly environmentally beneficial. However, the claim concerns network reliability and error correction only. It does not reference emissions, energy savings, sustainability, or environmental impact. General technical efficiency does not qualify as green technology without explicit environmental relevance.
+
+#### Example 2 - Vehicle safety system misclassified as green
+
+- `doc_id`: `9349292`
+- LLM suggestion: `1` (medium confidence)
+- Human label: `0`
+- Claim excerpt:
+  > "...sensor... distance to a front vehicle... range-rate... output an alarm signal..."
+
+Explanation:
+The LLM associated vehicle-related technology with potential environmental benefits. However, the invention describes a driver-assistance and safety monitoring system. The claim does not mention reduced fuel consumption, emission reduction, electrification, or energy optimization. Therefore, it does not meet the definition of green technology.
+
+#### Example 3 - Advanced materials without explicit environmental purpose
+
+- `doc_id`: `9416017`
+- LLM suggestion: `1` (medium confidence)
+- Human label: `0`
+- Claim excerpt:
+  > "...preparing an ERI framework type molecular sieve... silicon oxide... aluminum oxide..."
+
+Explanation:
+The LLM inferred possible environmental applications (e.g., carbon capture or filtration). However, the claim only describes the synthesis of a material without specifying its application. Since no environmental or climate-related purpose is explicitly stated in the claim, it was labeled as non-green.
+
+#### Observed Pattern
+
+Across override cases, the LLM tends to over-predict green classification when encountering:
+- General efficiency improvements
+- Vehicle-related technologies
+- Advanced materials
+- Industrial optimization
+
+Without explicit references to emissions reduction, renewable energy, energy efficiency, waste management, or climate mitigation, such claims should not be labeled as green.
+
 ## 🚀 Part D - Fine-Tuning PatentSBERTa
 
-We fine-tuned PatentSBERTa once using:
+I fine-tuned PatentSBERTa once using:
 - `train_silver`
 - `gold_100` (human-labeled uncertain cases)
 
